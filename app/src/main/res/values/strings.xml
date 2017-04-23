@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TestKeepSolid</string>
+    //loginActivity
+    <string name="please_enter_an_login">Enter login</string>
+    <string name="please_enter_an_password">Enter password</string>
+    <string name="next">enter</string>
+    <string name="error_field_required">Profile field</string>
+</resources>
