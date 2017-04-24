@@ -12,6 +12,6 @@ import retrofit2.http.POST;
 public interface ApiService {
 
     @FormUrlEncoded
-    @POST("/")
+    @POST("./")
     Call<AuthAnswer> getSession(@FieldMap Map<String, String> map);
 }

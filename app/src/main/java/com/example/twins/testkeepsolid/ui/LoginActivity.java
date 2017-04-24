@@ -67,6 +67,7 @@ public class LoginActivity extends AppCompatActivity {
                     mLoginView.setError(null);
                     mPasswordView.setError(null);
                     auth(login, password);
+//                    getFields(login, password);
                 }
             }
         });
@@ -88,9 +89,9 @@ public class LoginActivity extends AppCompatActivity {
         ApiFactory.authAdapter().getSession(getFields(login, password)).enqueue(new Callback<AuthAnswer>() {
             @Override
             public void onResponse(Call<AuthAnswer> call, Response<AuthAnswer> response) {
-                if (response.body() != null && response.body().getResponse() == 200) {
-                    Log.d(TAG, "getResponse = " + response.body().getResponse()); //If you see this, you're all set to consume your API
-                    Log.d(TAG, "getSession = " + response.body().getSession()); //If you see this, you're all set to consume your API
+                if (response.body() != null /*&& response.body().getResponse() == 200*/) {
+                    Log.d(TAG, "getResponse = " + response.body().getResponse());
+                    Log.d(TAG, "getSession = " + response.body().getSession());
                     startMainActivity(response.body().getSession());
                 } else {
                     Toast.makeText(LoginActivity.this, "Error connect", Toast.LENGTH_SHORT).show();
@@ -107,13 +108,13 @@ public class LoginActivity extends AppCompatActivity {
 
     private Map<String, String> getFields(String login, String password) {
         //for test
-        login = "kscheck007@mailinator.com";
-        password = "123455";
+        login = "kscheck006@mailinator.com";
+        password = "123456";
 
         Map<String, String> map = new HashMap<>();
         try {
             map.put(ACTION, base64Encoded("login"));
-            map.put(SERVICE, base64Encoded("com.example.twins.testkeepsolid"));
+            map.put(SERVICE, base64Encoded("com.braininstock.ToDoChecklist"));
             map.put(LOGIN, base64Encoded(login));
             map.put(PASSWORD, base64Encoded(password));
             map.put(DEVICE_ID, base64Encoded(Secure.getString(getContentResolver(), Secure.ANDROID_ID)));
@@ -126,10 +127,10 @@ public class LoginActivity extends AppCompatActivity {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-//        Log.d(TAG, "size maps = " + map.size());
-//        for (Map.Entry<String, String> entry : map.entrySet()) {
-//            Log.d(TAG, "__" + entry.getKey() + "/" + entry.getValue());
-//        }
+        Log.d(TAG, "size maps = " + map.size());
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            Log.d(TAG, "__" + entry.getKey() + "/" + entry.getValue());
+        }
         return map;
     }
 
