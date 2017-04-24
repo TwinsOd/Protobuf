@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package proto;
+
+enum MessageType {
+
+    TEST = 0;
+
+    RPC_WORKGROUPS_LIST = 64;
+
+    RPC_UNKNOWN = 1024;
+}
+
+

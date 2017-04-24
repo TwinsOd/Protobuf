@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package proto;
+
+option optimize_for = SPEED;
+
+enum Filter
+{
+    EXISTING_ONLY   = 0;
+    DELETED_ONLY    = 1;
+    ALL_ENTRIES     = 2;
+}
+
+message WorkGroupInfo {
+    int64      workgroup_id        = 1;
+    string     workgroup_name      = 2;
+    string     description         = 3;
+    string     creator_login       = 4;
+    int64      access_mode         = 5;
+    bool       invite_accepted     = 8;
+    string     key                 = 9;
+    string     key_signature       = 10;
+    string     key_salt            = 11;
+    int32      encryption_algo     = 12;
+    int32      encryption_type     = 13;
+    int64      size                = 16;
+    int64      creation_date       = 17;
+    int64      deletion_date       = 18;
+    string     creation_date_str   = 19;
+    string     deletion_date_str   = 20;
+    bool       is_deleted          = 23;
+    int64      company_id          = 24;
+    int32      workgroup_type      = 25; //for Todo Checklist or metadata parsing
+    string     workgroup_metadata  = 26; //for Todo Checklist or metadata parsing
+    
+    int64		files_count			= 27;
+}
+
