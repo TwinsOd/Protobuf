@@ -27,36 +27,48 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String sessionID = null;
-        if (intent != null)
+        if (intent != null) {
             sessionID = intent.getStringExtra(KEY_SESSION_ID);//ebe3c2a2-2e17-4b5c-8469-1cdf25bc49e1
-        Log.i(TAG, "sessionID = " + sessionID);
+            Log.i(TAG, "intent != null _ sessionID = " + sessionID);
+        }
+//        if (sessionID == null) sessionID = "5c43704e-e578-4d72-bdf2-624cbeb8686c";
+//        Log.i(TAG, "sessionID = " + sessionID);
         if (sessionID != null) {
             getData(sessionID);
         }
     }
 
     private void getData(String sessionID) {
-        MessageWorkgroup.WorkGroupsListRequest worGroupkList = MessageWorkgroup.WorkGroupsListRequest.newBuilder()
+        MessageWorkgroup.WorkGroupsListRequest worGroupList = MessageWorkgroup.WorkGroupsListRequest.newBuilder()
                 .setSessionId(sessionID)
                 .build();
 
         Message.Request request = Message.Request.newBuilder()
                 .setMessageType(MessageTypeOuterClass.MessageType.RPC_WORKGROUPS_LIST)
-                .setWorkgroupsList(worGroupkList)
+                .setWorkgroupsList(worGroupList)
                 .setServiceType(1)
                 .setIsDebug(true)
                 .build();
 
-        byte[] bytes = request.toByteArray();
-
-        ApiFactory.itemAdapter().getItems(bytes).enqueue(new Callback() {
+        ApiFactory.itemAdapter().getItems(request).enqueue(new Callback<Message.Response>() {
             @Override
-            public void onResponse(Call call, Response response) {
-                response.
+            public void onResponse(Call<Message.Response> call, Response<Message.Response> response) {
+                Log.i(TAG, "getMessageType = " + response.body().getMessageType());
+                Log.i(TAG, "getErrorCode = " + response.body().getErrorCode());
+                Log.i(TAG, "getRequestId = " + response.body().getRequestId());
+                int countInfo = response.body().getWorkgroupsList().getWorkgroupInfoListCount();
+                Log.i(TAG, "countInfo = " + countInfo);
+                if (countInfo >= 1) {
+                    Log.i(TAG, "getWorkgroupType() = " + response.body().getWorkgroupsList().getWorkgroupInfoList(0).getWorkgroupType());
+                    Log.i(TAG, "Metadata() = " + response.body().getWorkgroupsList().getWorkgroupInfoList(0).getWorkgroupMetadata());
+                }
+                if (countInfo >= 2) {
+                    Log.i(TAG, "getWorkgroupType() = " + response.body().getWorkgroupsList().getWorkgroupInfoList(1).getWorkgroupType());
+                    Log.i(TAG, "Metadata() = " + response.body().getWorkgroupsList().getWorkgroupInfoList(1).getWorkgroupMetadata());
+                }
             }
-
             @Override
-            public void onFailure(Call call, Throwable t) {
+            public void onFailure(Call<Message.Response> call, Throwable t) {
 
             }
         });

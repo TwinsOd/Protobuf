@@ -1,7 +1,5 @@
 package com.example.twins.testkeepsolid.data;
 
-import java.util.concurrent.TimeUnit;
-
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -12,7 +10,8 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 public class ApiFactory {
 //        private static final String AUTH_URL = "https://dev-auth.simplexsolutionsinc.com";// 302
     private static final String AUTH_URL = "https://auth.simplexsolutionsinc.com";// 302
-    private static final String ITEM_URL = "https://198.7.62.140:6668";
+    //    private static final String ITEM_URL = "https://198.7.62.140:6668";
+    private static final String ITEM_URL = "https://rpc.v1.keepsolid.com:443";
     //or Address: rpc.v1.keepsolid.com, port: 443
 
 
