@@ -16,8 +16,4 @@ public interface ApiService {
     @FormUrlEncoded
     @POST("./")
     Call<AuthAnswer> getSession(@FieldMap Map<String, String> map);
-
-    @Headers("")
-    @POST("./")
-    Call<proto.Message.Response> getItems(@Body proto.Message.Request request);
 }
