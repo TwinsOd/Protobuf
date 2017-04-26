@@ -78,10 +78,10 @@ public class LoginActivity extends AppCompatActivity {
                     mLoginView.setError(null);
                     mPasswordView.setError(null);
                     auth(login, password);
-//                    getFields(login, password);
                 }
             }
         });
+//        auth("", "");//test !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
 
     private void startMainActivity(String sessionId) {
