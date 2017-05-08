@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package proto;
 
@@ -11,14 +11,14 @@ import "message_common.proto";
 //Get list of work groups for user's account
 //  @filter allows to show deleted wgs
 message WorkGroupsListRequest {
-    string session_id = 1;
-    Filter filter = 2;
+    optional string         session_id          = 1;
+    optional Filter         filter              = 2;
 }
 
 message WorkGroupsListResponse {
-    int32 error_code = 1;
-    repeated WorkGroupInfo workgroup_info_list = 2;
-    int64 last_event_id = 3;
+    optional int32              error_code              = 1;
+    repeated WorkGroupInfo      workgroup_info_list     = 2;
+    optional int64              last_event_id           = 3;
 }
 
 

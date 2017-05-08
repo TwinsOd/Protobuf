@@ -86,7 +86,7 @@ dependencies {
     compile("com.squareup.retrofit2:converter-jackson:${RETROFIT_VERSION}")
     //other
     compile 'com.squareup.okhttp3:logging-interceptor:3.4.1'
-    compile 'com.google.protobuf:protobuf-java:3.0.0'
+    compile 'com.google.protobuf:protobuf-java:2.6.1'
 
     testCompile 'junit:junit:4.12'
 }

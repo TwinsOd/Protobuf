@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
                         byte[] buffer = readBytes(inputStream);
                         // [1, 0, 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 8, 64, -126, 4, 3, 8, -112, 3, -128, -128, 1, -112, 3, -118, -128, 1, 12, 66, 97, 100, 32, 114, 101, 113, 117, 101, 115, 116, 46, -110, -128, 1, 13, 54, 69, 69, 54, 58, 52, 54, 55, 55, 51, 51, 53, 55]
                         Log.i(TAG, "buffer =  " + Arrays.toString(buffer));
-                        Log.i(TAG, "buffer.length =  " + buffer.length);
+                        Log.i(TAG, "buffer.length =  " + buffer.length); //  4826
 
                         if (buffer.length > 16) {
                             byte[] arrayProtobuf = Arrays.copyOfRange(buffer, 16, buffer.length);
@@ -147,17 +147,17 @@ public class MainActivity extends AppCompatActivity {
     private void printResponse(Message.Response response) {
         Log.i(TAG, "Message.Response.parseFrom");
 
-        Log.i(TAG, "getMessageType = " + response.getMessageType());
-        Log.i(TAG, "getErrorCode = " + response.getErrorCode());
+        Log.i(TAG, "getMessageType = " + response.getMessageType()); // getMessageType = RPC_WORKGROUPS_LIST
+        Log.i(TAG, "getErrorCode = " + response.getErrorCode()); //200
         if (response.getErrorMessageList() != null && response.getErrorMessageList().size() > 0)
-        Log.i(TAG, "MessageList().get(0) = " + response.getErrorMessageList().get(0));
-        Log.i(TAG, "getRequestId = " + response.getRequestId());
+        Log.i(TAG, "MessageList().get(0) = " + response.getErrorMessageList().get(0)); // OK
+        Log.i(TAG, "getRequestId = " + response.getRequestId());//8B1:3BDC612A - different
         int countInfo = response.getWorkgroupsList().getWorkgroupInfoListList().size();
-        Log.i(TAG, "countInfo = " + countInfo);//different
-        Log.i(TAG, "getErrorCode = " + response.getWorkgroupsList().getErrorCode());//400
-        Log.i(TAG, "getLastEventId = " + response.getWorkgroupsList().getLastEventId());//0
+        Log.i(TAG, "countInfo = " + countInfo);//8
+        Log.i(TAG, "getErrorCode = " + response.getWorkgroupsList().getErrorCode());//200
+        Log.i(TAG, "getLastEventId = " + response.getWorkgroupsList().getLastEventId());//1418401
         if (countInfo >= 1) {
-            Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupType());
+            Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupType()); //1001
             Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupMetadata());
         }
         if (countInfo >= 2) {
@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
         ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
 
         // this is storage overwritten on each iteration with bytes
-        int bufferSize = 124;
+        int bufferSize = 10240;
         byte[] buffer = new byte[bufferSize];
         // we need to know how may bytes were read to write them to the byteBuffer
         int len;

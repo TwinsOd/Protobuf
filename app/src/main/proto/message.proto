@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package proto;
 
@@ -9,21 +9,21 @@ import "message_type.proto";
 import "message_workgroup.proto";
 
 message Request {
-    MessageType message_type = 1;
+    optional MessageType                        message_type                = 1;
 
-    WorkGroupsListRequest workgroups_list = 64;
+    optional WorkGroupsListRequest              workgroups_list             = 64;
 
-    int64 service_type = 4096;
-    bool is_debug = 4097;
+    optional int64                              service_type                = 4096;
+    optional bool                               is_debug                    = 4097;
 }
 
 message Response {
-    MessageType message_type = 1;
+    optional MessageType                        message_type                = 1;
 
-    WorkGroupsListResponse workgroups_list = 64;
+    optional WorkGroupsListResponse             workgroups_list             = 64;
 
-    int32 error_code = 2048;
-    repeated string error_message = 2049;
-    string request_id = 2050;
+    optional int32                              error_code                  = 2048;
+    repeated string                             error_message               = 2049;
+    optional string                             request_id                  = 2050;
 }
 
