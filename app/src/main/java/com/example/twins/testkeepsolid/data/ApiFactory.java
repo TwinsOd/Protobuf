@@ -4,12 +4,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
-import retrofit2.converter.protobuf.ProtoConverterFactory;
 
 
 public class ApiFactory {
-//        private static final String AUTH_URL = "https://dev-auth.simplexsolutionsinc.com";// 302
-    private static final String AUTH_URL = "https://auth.simplexsolutionsinc.com";// 302
+        private static final String AUTH_URL = "https://dev-auth.simplexsolutionsinc.com";// 302
+//    private static final String AUTH_URL = "https://auth.simplexsolutionsinc.com";// 302
 
     public static ApiService authAdapter() {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();

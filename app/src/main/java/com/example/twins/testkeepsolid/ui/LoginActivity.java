@@ -81,7 +81,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
-//        auth("", "");//test !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        auth("", "");//test !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
 
     private void startMainActivity(String sessionId) {

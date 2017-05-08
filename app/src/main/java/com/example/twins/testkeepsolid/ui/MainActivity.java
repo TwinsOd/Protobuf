@@ -29,6 +29,7 @@ import javax.net.ssl.X509TrustManager;
 import javax.security.cert.X509Certificate;
 
 import proto.Message;
+import proto.MessageCommon;
 import proto.MessageTypeOuterClass;
 import proto.MessageWorkgroup;
 
@@ -36,6 +37,7 @@ import static com.example.twins.testkeepsolid.Constant.KEY_SESSION_ID;
 
 public class MainActivity extends AppCompatActivity {
     private String TAG = "MainActivity";
+    private SSLSocket socket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,22 +61,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getData(final String sessionID) throws IOException {
-//        final String ITEM_URL = "rpc.v1.keepsolid.com";
-        final String ITEM_URL = "198.7.62.140";
-//        final int PORT = 443;
-        final int PORT = 6668;
+        final String ITEM_URL = "rpc.v1.keepsolid.com";
+//        final String ITEM_URL = "198.7.62.140";
+        final int PORT = 443;
+//        final int PORT = 6668;
 
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 final Message.Request request = createObject(sessionID);
-                final byte[] arrayRequest = createArrayRequest(request);
-                Log.i(TAG, "arrayRequest.length =  " + arrayRequest.length);
-                try {
+                byte[] arrayRequest = createArrayRequest(request, 0);
+               try {
                     Log.i(TAG, "start ");
 
-                    // Create a trust manager that does not validate certificate chains
                     TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
                         @Override
                         public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
@@ -103,8 +103,7 @@ public class MainActivity extends AppCompatActivity {
                     sc.init(null, trustAllCerts, new java.security.SecureRandom());
 
                     SocketFactory socketFactory = sc.getSocketFactory();
-//                    SocketFactory socketFactory = SSLSocketFactory.getDefault();
-                    SSLSocket socket = (SSLSocket) socketFactory.createSocket(ITEM_URL, PORT);
+                    socket = (SSLSocket) socketFactory.createSocket(ITEM_URL, PORT);
 
 //                    printServerCertificate(socket);
 //                    printSocketInfo(socket);
@@ -112,46 +111,29 @@ public class MainActivity extends AppCompatActivity {
                     OutputStream outputStream = socket.getOutputStream();
                     InputStream inputStream = socket.getInputStream();
 
-                    outputStream.write(arrayRequest);
-                    Log.i(TAG, "outputStream.write ");
-//                    Log.i(TAG, "inputStream.toString() = " + inputStream.toString());
+                    boolean runSocket = true;
 
-//                    Reader reader = new InputStreamReader(inputStream);
-//                    while (true) {
-//                        int ch = reader.read();
-//                        if (ch==-1) {
-//                            break;
-//                        }
-//                        Log.i(TAG, "reader =  " + ch);
-//                        int bufferSize = 1024;
-//                        byte[] buffer = new byte[bufferSize];
-//                        Log.i(TAG, "reader =  " + inputStream.read(buffer));
-////                        char[] array = new char[];
-////                        Log.i(TAG, "array =  " + reader.read(array));
-//                    }
+                    while (runSocket) {
+                        outputStream.write(arrayRequest);
+                        Log.i(TAG, "outputStream.write ");
 
-                    byte[] buffer = readBytes(inputStream);
-                    Log.i(TAG, "buffer =  " + Arrays.toString(buffer));
-                    Log.i(TAG, "buffer.length =  " + buffer.length);
+                        byte[] buffer = readBytes(inputStream);
+                        // [1, 0, 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 8, 64, -126, 4, 3, 8, -112, 3, -128, -128, 1, -112, 3, -118, -128, 1, 12, 66, 97, 100, 32, 114, 101, 113, 117, 101, 115, 116, 46, -110, -128, 1, 13, 54, 69, 69, 54, 58, 52, 54, 55, 55, 51, 51, 53, 55]
+                        Log.i(TAG, "buffer =  " + Arrays.toString(buffer));
+                        Log.i(TAG, "buffer.length =  " + buffer.length);
 
-                    Message.Response response = Message.Response.parseFrom(inputStream);
-                    Log.i(TAG, "Message.Response.parseFrom");
-
-                    Log.i(TAG, "getMessageType = " + response.getMessageType());
-                    Log.i(TAG, "getErrorCode = " + response.getErrorCode());
-                    Log.i(TAG, "getRequestId = " + response.getRequestId());
-                    int countInfo = response.getWorkgroupsList().getWorkgroupInfoListList().size();
-                    Log.i(TAG, "countInfo = " + countInfo);
-                    if (countInfo >= 1) {
-                        Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupType());
-                        Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupMetadata());
-                    }
-                    if (countInfo >= 2) {
-                        Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(1).getWorkgroupType());
-                        Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(1).getWorkgroupMetadata());
+                        if (buffer.length > 16) {
+                            byte[] arrayProtobuf = Arrays.copyOfRange(buffer, 16, buffer.length);
+                            Log.i(TAG, Arrays.toString(arrayProtobuf));
+                            Message.Response response = Message.Response.parseFrom(arrayProtobuf);
+                            printResponse(response);
+                            arrayRequest = createArrayRequest(request, Arrays.copyOfRange(buffer, 0, 8));
+                        } else {
+                            Log.i(TAG, "bad response");
+                            runSocket = false;
+                        }
                     }
 
-                    socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                     Log.i(TAG, "IOException = " + e.getMessage());
@@ -162,20 +144,45 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void printResponse(Message.Response response) {
+        Log.i(TAG, "Message.Response.parseFrom");
+
+        Log.i(TAG, "getMessageType = " + response.getMessageType());
+        Log.i(TAG, "getErrorCode = " + response.getErrorCode());
+        if (response.getErrorMessageList() != null && response.getErrorMessageList().size() > 0)
+        Log.i(TAG, "MessageList().get(0) = " + response.getErrorMessageList().get(0));
+        Log.i(TAG, "getRequestId = " + response.getRequestId());
+        int countInfo = response.getWorkgroupsList().getWorkgroupInfoListList().size();
+        Log.i(TAG, "countInfo = " + countInfo);//different
+        Log.i(TAG, "getErrorCode = " + response.getWorkgroupsList().getErrorCode());//400
+        Log.i(TAG, "getLastEventId = " + response.getWorkgroupsList().getLastEventId());//0
+        if (countInfo >= 1) {
+            Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupType());
+            Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupMetadata());
+        }
+        if (countInfo >= 2) {
+            Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(1).getWorkgroupType());
+            Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(1).getWorkgroupMetadata());
+        }
+    }
+
     public byte[] readBytes(InputStream inputStream) throws IOException {
+        Log.i(TAG, "readBytes ");
         // this dynamically extends to take the bytes you read
         ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
 
         // this is storage overwritten on each iteration with bytes
-        int bufferSize = 1024;
+        int bufferSize = 124;
         byte[] buffer = new byte[bufferSize];
-
         // we need to know how may bytes were read to write them to the byteBuffer
-        int len = 0;
+        int len;
         while ((len = inputStream.read(buffer)) != -1) {
+            Log.i(TAG, "readBytes _ len =" + len);
             byteBuffer.write(buffer, 0, len);
+            if (len > 8) break;
         }
-
+        //I/Choreographer: Skipped 41 frames!  The application may be doing too much work on its main thread.
+        Log.i(TAG, "readBytes _ end ");
         // and then we can return your byte array.
         return byteBuffer.toByteArray();
     }
@@ -183,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
     private Message.Request createObject(String sessionID) {
         MessageWorkgroup.WorkGroupsListRequest worGroupList = MessageWorkgroup.WorkGroupsListRequest.newBuilder()
                 .setSessionId(sessionID)
+                .setFilter(MessageCommon.Filter.EXISTING_ONLY)
                 .build();
 
         return Message.Request.newBuilder()
@@ -193,16 +201,25 @@ public class MainActivity extends AppCompatActivity {
                 .build();
     }
 
-    private byte[] createArrayRequest(Message.Request request) {
+    private byte[] createArrayRequest(Message.Request request, byte[] arraySequenceNumber) {
         byte[] arrayProto = request.toByteArray();
         int sizeProto = arrayProto.length;
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        byte[] arrayHeaderPast1 = buffer.putInt(0).array();
-        byte[] arrayHeaderPast2 = buffer.putInt(sizeProto).array();
-        int sequenceNumber = 0;
-        byte[] arraySequenceNumber = ByteBuffer.allocate(8).putInt(sequenceNumber).array();
+        Log.i(TAG, "arrayProto.length = " + sizeProto);//51
+
+        ByteBuffer buffer1 = ByteBuffer.allocate(4);
+        buffer1.order(ByteOrder.LITTLE_ENDIAN);
+        byte[] arrayHeaderPast1 = buffer1.putInt(sizeProto).array();
+
+        ByteBuffer buffer2 = ByteBuffer.allocate(4);
+        buffer2.order(ByteOrder.LITTLE_ENDIAN);
+        byte[] arrayHeaderPast2 = buffer2.putInt(0).array();
+
         return arrayMerge(arraySequenceNumber, arrayHeaderPast1, arrayHeaderPast2, arrayProto);
+    }
+
+    private byte[] createArrayRequest(Message.Request request, int sequenceNumber) {
+        byte[] arraySequenceNumber = ByteBuffer.allocate(8).putInt(sequenceNumber).array();
+        return createArrayRequest(request, arraySequenceNumber);
     }
 
     private byte[] arrayMerge(byte[] arraySequenceNumber, byte[] arrayHeaderPast1, byte[] arrayHeaderPast2, byte[] arrayProto) {
@@ -221,6 +238,9 @@ public class MainActivity extends AppCompatActivity {
         position = position + sizeHeaderPast2;
         System.arraycopy(arrayProto, 0, newArray, position, sizeProto);
 
+        Log.i(TAG, "arrayRequest.length =  " + newArray.length);//67
+        Log.i(TAG, "arrayRequest =  " + Arrays.toString(newArray));
+        //[0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0, 8, 64, -126, 4, 38, 10, 36, 57, 100, 99, 52, 50, 54, 99, 97, 45, 50, 48, 97, 57, 45, 52, 52, 50, 100, 45, 56, 99, 57, 101, 45, 48, 50, 56, 102, 52, 54, 54, 50, 49, 53, 53, 99, -128, -128, 2, 1, -120, -128, 2, 1]
         return newArray;
     }
 
@@ -260,5 +280,13 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "   Protocol = " + ss.getProtocol());//TLSv1
     }
 
-
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
