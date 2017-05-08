@@ -3,9 +3,14 @@ package com.example.twins.testkeepsolid.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
 import com.example.twins.testkeepsolid.R;
+import com.example.twins.testkeepsolid.adapter.ChecklistAdapter;
+import com.example.twins.testkeepsolid.data.model.TaskModel;
+import com.google.gson.Gson;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,7 +22,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -26,7 +33,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.security.cert.X509Certificate;
 
 import proto.Message;
 import proto.MessageCommon;
@@ -38,6 +44,8 @@ import static com.example.twins.testkeepsolid.Constant.KEY_SESSION_ID;
 public class MainActivity extends AppCompatActivity {
     private String TAG = "MainActivity";
     private SSLSocket socket;
+    private ChecklistAdapter mChecklistAdapter;
+    private List<TaskModel> mTaskList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,11 +61,19 @@ public class MainActivity extends AppCompatActivity {
 
         if (sessionID != null) {
             try {
+                initRecycleView();
                 getData(sessionID);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void initRecycleView() {
+        mChecklistAdapter = new ChecklistAdapter(this, mTaskList);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.checklist_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(mChecklistAdapter);
     }
 
     private void getData(final String sessionID) throws IOException {
@@ -72,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 final Message.Request request = createObject(sessionID);
                 byte[] arrayRequest = createArrayRequest(request, 0);
-               try {
+                try {
                     Log.i(TAG, "start ");
 
                     TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
@@ -88,12 +104,6 @@ public class MainActivity extends AppCompatActivity {
 
                         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                             return null;
-                        }
-
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                        }
-
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
                         }
                     }
                     };
@@ -112,13 +122,12 @@ public class MainActivity extends AppCompatActivity {
                     InputStream inputStream = socket.getInputStream();
 
                     boolean runSocket = true;
-
+                    int i = 0;
                     while (runSocket) {
                         outputStream.write(arrayRequest);
                         Log.i(TAG, "outputStream.write ");
 
                         byte[] buffer = readBytes(inputStream);
-                        // [1, 0, 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 8, 64, -126, 4, 3, 8, -112, 3, -128, -128, 1, -112, 3, -118, -128, 1, 12, 66, 97, 100, 32, 114, 101, 113, 117, 101, 115, 116, 46, -110, -128, 1, 13, 54, 69, 69, 54, 58, 52, 54, 55, 55, 51, 51, 53, 55]
                         Log.i(TAG, "buffer =  " + Arrays.toString(buffer));
                         Log.i(TAG, "buffer.length =  " + buffer.length); //  4826
 
@@ -126,8 +135,10 @@ public class MainActivity extends AppCompatActivity {
                             byte[] arrayProtobuf = Arrays.copyOfRange(buffer, 16, buffer.length);
                             Log.i(TAG, Arrays.toString(arrayProtobuf));
                             Message.Response response = Message.Response.parseFrom(arrayProtobuf);
-                            printResponse(response);
+                            showResponse(response);
+                            i++;
                             arrayRequest = createArrayRequest(request, Arrays.copyOfRange(buffer, 0, 8));
+                            if (i > 5) runSocket = false;
                         } else {
                             Log.i(TAG, "bad response");
                             runSocket = false;
@@ -144,25 +155,23 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    private void printResponse(Message.Response response) {
-        Log.i(TAG, "Message.Response.parseFrom");
-
-        Log.i(TAG, "getMessageType = " + response.getMessageType()); // getMessageType = RPC_WORKGROUPS_LIST
-        Log.i(TAG, "getErrorCode = " + response.getErrorCode()); //200
-        if (response.getErrorMessageList() != null && response.getErrorMessageList().size() > 0)
-        Log.i(TAG, "MessageList().get(0) = " + response.getErrorMessageList().get(0)); // OK
-        Log.i(TAG, "getRequestId = " + response.getRequestId());//8B1:3BDC612A - different
+    private void showResponse(Message.Response response) {
         int countInfo = response.getWorkgroupsList().getWorkgroupInfoListList().size();
-        Log.i(TAG, "countInfo = " + countInfo);//8
-        Log.i(TAG, "getErrorCode = " + response.getWorkgroupsList().getErrorCode());//200
-        Log.i(TAG, "getLastEventId = " + response.getWorkgroupsList().getLastEventId());//1418401
         if (countInfo >= 1) {
-            Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupType()); //1001
-            Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(0).getWorkgroupMetadata());
-        }
-        if (countInfo >= 2) {
-            Log.i(TAG, "getWorkgroupType() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(1).getWorkgroupType());
-            Log.i(TAG, "getWorkgroupMetadata() = " + response.getWorkgroupsList().getWorkgroupInfoListList().get(1).getWorkgroupMetadata());
+            for (MessageCommon.WorkGroupInfo model : response.getWorkgroupsList().getWorkgroupInfoListList()) {
+                String json = model.getWorkgroupMetadata();
+                Log.i(TAG, "getWorkgroupMetadata() = " + json);
+                Gson gson = new Gson();
+                TaskModel taskModel = gson.fromJson(json, TaskModel.class);
+                taskModel.setType(model.getWorkgroupType());
+                mTaskList.add(taskModel);
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mChecklistAdapter.notifyDataSetChanged();
+                }
+            });
         }
     }
 
@@ -204,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
     private byte[] createArrayRequest(Message.Request request, byte[] arraySequenceNumber) {
         byte[] arrayProto = request.toByteArray();
         int sizeProto = arrayProto.length;
-        Log.i(TAG, "arrayProto.length = " + sizeProto);//51
+        Log.i(TAG, "arrayProto.length = " + sizeProto);
 
         ByteBuffer buffer1 = ByteBuffer.allocate(4);
         buffer1.order(ByteOrder.LITTLE_ENDIAN);
