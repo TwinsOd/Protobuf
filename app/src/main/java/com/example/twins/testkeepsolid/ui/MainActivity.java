@@ -7,18 +7,26 @@ import android.util.Log;
 
 import com.example.twins.testkeepsolid.R;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.security.cert.X509Certificate;
 
 import proto.Message;
 import proto.MessageTypeOuterClass;
@@ -62,22 +70,72 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 final Message.Request request = createObject(sessionID);
                 final byte[] arrayRequest = createArrayRequest(request);
-
+                Log.i(TAG, "arrayRequest.length =  " + arrayRequest.length);
                 try {
                     Log.i(TAG, "start ");
 
-                    SocketFactory socketFactory = SSLSocketFactory.getDefault();
+                    // Create a trust manager that does not validate certificate chains
+                    TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
+
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
+
+                        }
+
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+                    };
+
+                    // Install the all-trusting trust manager
+                    SSLContext sc = SSLContext.getInstance("SSL");
+                    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+
+                    SocketFactory socketFactory = sc.getSocketFactory();
+//                    SocketFactory socketFactory = SSLSocketFactory.getDefault();
                     SSLSocket socket = (SSLSocket) socketFactory.createSocket(ITEM_URL, PORT);
 
-                    printServerCertificate(socket);
-                    printSocketInfo(socket);
+//                    printServerCertificate(socket);
+//                    printSocketInfo(socket);
 
                     OutputStream outputStream = socket.getOutputStream();
                     InputStream inputStream = socket.getInputStream();
 
                     outputStream.write(arrayRequest);
+                    Log.i(TAG, "outputStream.write ");
+//                    Log.i(TAG, "inputStream.toString() = " + inputStream.toString());
+
+//                    Reader reader = new InputStreamReader(inputStream);
+//                    while (true) {
+//                        int ch = reader.read();
+//                        if (ch==-1) {
+//                            break;
+//                        }
+//                        Log.i(TAG, "reader =  " + ch);
+//                        int bufferSize = 1024;
+//                        byte[] buffer = new byte[bufferSize];
+//                        Log.i(TAG, "reader =  " + inputStream.read(buffer));
+////                        char[] array = new char[];
+////                        Log.i(TAG, "array =  " + reader.read(array));
+//                    }
+
+                    byte[] buffer = readBytes(inputStream);
+                    Log.i(TAG, "buffer =  " + Arrays.toString(buffer));
+                    Log.i(TAG, "buffer.length =  " + buffer.length);
 
                     Message.Response response = Message.Response.parseFrom(inputStream);
+                    Log.i(TAG, "Message.Response.parseFrom");
 
                     Log.i(TAG, "getMessageType = " + response.getMessageType());
                     Log.i(TAG, "getErrorCode = " + response.getErrorCode());
@@ -97,9 +155,29 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                     Log.i(TAG, "IOException = " + e.getMessage());
+                } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                    e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    public byte[] readBytes(InputStream inputStream) throws IOException {
+        // this dynamically extends to take the bytes you read
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+
+        // this is storage overwritten on each iteration with bytes
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
+
+        // we need to know how may bytes were read to write them to the byteBuffer
+        int len = 0;
+        while ((len = inputStream.read(buffer)) != -1) {
+            byteBuffer.write(buffer, 0, len);
+        }
+
+        // and then we can return your byte array.
+        return byteBuffer.toByteArray();
     }
 
     private Message.Request createObject(String sessionID) {
