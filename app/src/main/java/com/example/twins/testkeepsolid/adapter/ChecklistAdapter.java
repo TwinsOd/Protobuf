@@ -2,6 +2,7 @@ package com.example.twins.testkeepsolid.adapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.support.v4.widget.TextViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.text.Spanned;
@@ -78,6 +79,7 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 for (String text : model.getTasks()) {
                     TextView textView = new TextView(mContext);
                     textView.setText(boldFirstWord(i + ":", text));
+                    TextViewCompat.setTextAppearance(textView, R.style.TextAppearance_AppCompat_Body1);
                     holder.taskContainerLayout.addView(textView);
                     i++;
                 }
