@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 
 import com.example.twins.testkeepsolid.R;
 import com.example.twins.testkeepsolid.adapter.ChecklistAdapter;
@@ -46,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private SSLSocket socket;
     private ChecklistAdapter mChecklistAdapter;
     private List<TaskModel> mTaskList = new ArrayList<>();
+    private byte[] arrayRequest;
+    private OutputStream outputStream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +70,21 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        findViewById(R.id.add_data_fab).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            outputStream.write(arrayRequest);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
     }
 
     private void initRecycleView() {
@@ -87,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 final Message.Request request = createObject(sessionID);
-                byte[] arrayRequest = createArrayRequest(request, 0);
+                arrayRequest = createArrayRequest(request, 0);
                 try {
                     Log.i(TAG, "start ");
 
@@ -118,33 +136,37 @@ public class MainActivity extends AppCompatActivity {
 //                    printServerCertificate(socket);
 //                    printSocketInfo(socket);
 
-                    OutputStream outputStream = socket.getOutputStream();
+                    outputStream = socket.getOutputStream();
                     InputStream inputStream = socket.getInputStream();
 
-                    boolean runSocket = true;
-                    int i = 0;
-                    while (runSocket) {
-                        outputStream.write(arrayRequest);
-                        Log.i(TAG, "outputStream.write ");
 
-                        byte[] buffer = readBytes(inputStream);
-                        Log.i(TAG, "buffer =  " + Arrays.toString(buffer));
-                        Log.i(TAG, "buffer.length =  " + buffer.length); //  4826
+                    outputStream.write(arrayRequest);
+                    Log.i(TAG, "outputStream.write ");
 
-                        if (buffer.length > 16) {
-                            byte[] arrayProtobuf = Arrays.copyOfRange(buffer, 16, buffer.length);
-                            Log.i(TAG, Arrays.toString(arrayProtobuf));
-                            Message.Response response = Message.Response.parseFrom(arrayProtobuf);
+                    ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+                    int line = 0;
+                    byte[] buffer = getBufferArrayDefault();
+                    // we need to know how may bytes were read to write them to the byteBuffer
+                    int len;
+                    while ((len = inputStream.read(buffer)) != -1) {
+                        line++;
+                        Log.i(TAG, "readBytes _ len =" + len);
+                        byteBuffer.write(buffer, 0, len);
+                        if (line == 1) {
+                            arrayRequest = createArrayRequest(request, buffer);
+                        }
+                        if (line == 2) {
+                            buffer = getBufferArrayBody(buffer);
+                        }
+                        if (line == 3) {
+                            Message.Response response = Message.Response.parseFrom(buffer);
                             showResponse(response);
-                            i++;
-                            arrayRequest = createArrayRequest(request, Arrays.copyOfRange(buffer, 0, 8));
-                            if (i > 5) runSocket = false;
-                        } else {
-                            Log.i(TAG, "bad response");
-                            runSocket = false;
+                            byteBuffer.flush();
+                            buffer = getBufferArrayDefault();
+                            line = 0;
                         }
                     }
-
+                    Log.i(TAG, "readBytes _ end ");
                 } catch (IOException e) {
                     e.printStackTrace();
                     Log.i(TAG, "IOException = " + e.getMessage());
