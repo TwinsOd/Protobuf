@@ -15,7 +15,6 @@ import com.example.twins.testkeepsolid.data.model.TaskModel;
 
 import java.util.List;
 
-
 public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int VALUE_TASK = 1001;

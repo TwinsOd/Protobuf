@@ -28,6 +28,8 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     private byte[] arrayRequest;
     private OutputStream outputStream;
     private ProgressBar progressBar;
+    private Executor executorRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
             }
         }
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+        executorRequest = Executors.newSingleThreadExecutor();
     }
 
     private void initRecycleView() {
@@ -89,8 +93,8 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         final int PORT = 443;
 //        final int PORT = 6668;
 
-
-        new Thread(new Runnable() {
+        Executor executorResponse = Executors.newSingleThreadExecutor();
+        executorResponse.execute(new Runnable() {
             @Override
             public void run() {
                 final Message.Request request = createObject(sessionID);
@@ -122,12 +126,11 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                     SocketFactory socketFactory = sc.getSocketFactory();
                     socket = (SSLSocket) socketFactory.createSocket(ITEM_URL, PORT);
 
-//                    printServerCertificate(socket);
-//                    printSocketInfo(socket);
+                    printServerCertificate(socket);
+                    printSocketInfo(socket);
 
                     outputStream = socket.getOutputStream();
                     InputStream inputStream = socket.getInputStream();
-
 
                     outputStream.write(arrayRequest);
                     Log.i(TAG, "outputStream.write ");
@@ -163,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
     }
 
     private void showResponse(Message.Response response) {
@@ -185,26 +188,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                 }
             });
         }
-    }
-
-    public byte[] readBytes(InputStream inputStream) throws IOException {
-        Log.i(TAG, "readBytes ");
-        // this dynamically extends to take the bytes you read
-        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-
-        int line = 0;
-        byte[] buffer = getBufferArrayDefault();
-        // we need to know how may bytes were read to write them to the byteBuffer
-        int len;
-        while ((len = inputStream.read(buffer)) != -1) {
-            Log.i(TAG, "readBytes _ len =" + len);
-            byteBuffer.write(buffer, 0, len);
-            if (line == 1) buffer = getBufferArrayBody(buffer);
-            if (line == 2) break;
-            line++;
-        }
-        Log.i(TAG, "readBytes _ end ");
-        return byteBuffer.toByteArray();
     }
 
     private byte[] getBufferArrayBody(byte[] bytes) {
@@ -326,15 +309,26 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     @Override
     public void setRequest() {
         progressBar.setVisibility(View.VISIBLE);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    outputStream.write(arrayRequest);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        executorRequest.execute(new SendRequestRunnable(outputStream, arrayRequest));
+    }
+
+    private static class SendRequestRunnable implements Runnable {
+        private final OutputStream outputStream;
+        private final byte[] arrayRequest;
+
+        private SendRequestRunnable(OutputStream outputStream, byte[] arrayRequest) {
+            this.outputStream = outputStream;
+            this.arrayRequest = arrayRequest;
+        }
+
+
+        @Override
+        public void run() {
+            try {
+                outputStream.write(arrayRequest);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        }).start();
+        }
     }
 }
