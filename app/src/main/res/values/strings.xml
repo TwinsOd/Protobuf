@@ -6,6 +6,7 @@
     <string name="next">next</string>
     <string name="error_field_required">Profile field</string>
     <string name="version">version:</string>
+    <string name="alias">alias:</string>
     <string name="completed">completed:</string>
     <string name="description">description:</string>
 </resources>

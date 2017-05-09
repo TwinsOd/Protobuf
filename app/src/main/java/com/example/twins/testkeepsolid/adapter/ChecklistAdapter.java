@@ -3,6 +3,8 @@ package com.example.twins.testkeepsolid.adapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -59,19 +61,23 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         final TaskModel model = taskList.get(position);
 
         holder.titleView.setText(model.getTitle());
-        holder.aliasView.setText(model.getAlias());
+        holder.aliasView.setText(boldFirstWord(R.string.alias, model.getAlias()));
         switch (model.getType()) {
             case VALUE_TASK:
-                holder.versionView.setText(String.format("%s %s", mContext.getString(R.string.version), model.getVersion()));
-                holder.completedView.setText(String.format("%s %s", mContext.getString(R.string.completed), String.valueOf(model.isCompleted())));
-                holder.descriptionView.setText(String.format("%s %s", mContext.getString(R.string.description), String.valueOf(model.getRemindOnLocation().getDescription())));
+                holder.versionView.setText(boldFirstWord(R.string.version, model.getVersion()));
+                holder.completedView.setText(boldFirstWord(R.string.completed, String.valueOf(model.isCompleted())));
+                String description = model.getRemindOnLocation().getDescription();
+                if (description == null || description.equals(""))
+                    holder.descriptionView.setVisibility(View.GONE);
+                else
+                    holder.descriptionView.setText(boldFirstWord(R.string.description, description));
                 break;
             case VALUE_TASK_LIST:
                 holder.taskContainerLayout.removeAllViews();
                 int i = 1;
                 for (String text : model.getTasks()) {
                     TextView textView = new TextView(mContext);
-                    textView.setText(String.format("%d: %s", i, text));
+                    textView.setText(boldFirstWord(i + ":", text));
                     holder.taskContainerLayout.addView(textView);
                     i++;
                 }
@@ -112,5 +118,25 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                     break;
             }
         }
+    }
+
+    private Spanned boldFirstWord(int idFirst, String strSecond) {
+        return fromHtml("<b>" + mContext.getString(idFirst) + "</b>" + " " + strSecond);
+    }
+
+    private Spanned boldFirstWord(String strFirst, String strSecond) {
+        if (strSecond == null) return fromHtml("");
+        return fromHtml("<b>" + strFirst + "</b>" + " " + strSecond);
+    }
+
+    @SuppressWarnings("deprecation")
+    private Spanned fromHtml(String html) {
+        Spanned result;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            result = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        } else {
+            result = Html.fromHtml(html);
+        }
+        return result;
     }
 }

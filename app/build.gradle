@@ -79,7 +79,7 @@ dependencies {
     })
     compile ("com.android.support:appcompat-v7:${SUPPORT_LIBRARY_VERSION}")
     compile ("com.android.support:design:${SUPPORT_LIBRARY_VERSION}")
-
+    compile("com.android.support:cardview-v7:${SUPPORT_LIBRARY_VERSION}")
     //Retrofit
     compile("com.squareup.retrofit2:retrofit:${RETROFIT_VERSION}")
     compile("com.squareup.retrofit2:converter-protobuf:${RETROFIT_VERSION}")

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="margin_first_text">16dp</dimen>
+    <dimen name="margin_first_text">4dp</dimen>
     <dimen name="margin_second_text">8dp</dimen>
     <dimen name="margin_progress_bar">16dp</dimen>
+    <dimen name="card_list_margin">8dp</dimen>
 </resources>

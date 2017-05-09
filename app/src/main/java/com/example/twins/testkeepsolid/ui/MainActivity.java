@@ -299,11 +299,17 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     @Override
     protected void onPause() {
         super.onPause();
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Executor executorClose = Executors.newSingleThreadExecutor();
+        executorClose.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override

@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/card_list_margin">
 
-    <TextView
-        android:id="@+id/title_view"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"/>
+        android:layout_margin="@dimen/card_list_margin"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/alias_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal" />
+        <TextView
+            android:id="@+id/title_view"
+            style="@style/first_text" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/alias_view"
+            style="@style/second_text"
+            android:layout_width="match_parent" />
+
+    </LinearLayout>
+</android.support.v7.widget.CardView>
