@@ -7,7 +7,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 
+import com.example.twins.testkeepsolid.LoadingData;
 import com.example.twins.testkeepsolid.R;
 import com.example.twins.testkeepsolid.adapter.ChecklistAdapter;
 import com.example.twins.testkeepsolid.data.model.TaskModel;
@@ -42,13 +44,14 @@ import proto.MessageWorkgroup;
 
 import static com.example.twins.testkeepsolid.Constant.KEY_SESSION_ID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoadingData {
     private String TAG = "MainActivity";
     private SSLSocket socket;
     private ChecklistAdapter mChecklistAdapter;
     private List<TaskModel> mTaskList = new ArrayList<>();
     private byte[] arrayRequest;
     private OutputStream outputStream;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,25 +73,11 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        findViewById(R.id.add_data_fab).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            outputStream.write(arrayRequest);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-            }
-        });
+        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
     }
 
     private void initRecycleView() {
-        mChecklistAdapter = new ChecklistAdapter(this, mTaskList);
+        mChecklistAdapter = new ChecklistAdapter(this, mTaskList, this);
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.checklist_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(mChecklistAdapter);
@@ -192,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     mChecklistAdapter.notifyDataSetChanged();
+                    progressBar.setVisibility(View.GONE);
                 }
             });
         }
@@ -331,5 +321,20 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void setRequest() {
+        progressBar.setVisibility(View.VISIBLE);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    outputStream.write(arrayRequest);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 }

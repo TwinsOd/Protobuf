@@ -3,4 +3,5 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="margin_first_text">16dp</dimen>
     <dimen name="margin_second_text">8dp</dimen>
+    <dimen name="margin_progress_bar">16dp</dimen>
 </resources>

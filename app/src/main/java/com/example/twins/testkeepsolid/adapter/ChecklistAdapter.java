@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.example.twins.testkeepsolid.LoadingData;
 import com.example.twins.testkeepsolid.R;
 import com.example.twins.testkeepsolid.data.model.TaskModel;
 
@@ -21,9 +22,11 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private static final int VALUE_TASK_LIST = 1002;
     private final List<TaskModel> taskList;
     private Context mContext;
+    private LoadingData interfaceLoadingData;
 
-    public ChecklistAdapter(Context context, List<TaskModel> taskList) {
+    public ChecklistAdapter(Context context, List<TaskModel> taskList, LoadingData interfaceLoadingData) {
         this.taskList = taskList;
+        this.interfaceLoadingData = interfaceLoadingData;
         mContext = context;
     }
 
@@ -75,6 +78,7 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 }
                 break;
         }
+        if (getItemCount() == position + 5) interfaceLoadingData.setRequest();
     }
 
     @Override
