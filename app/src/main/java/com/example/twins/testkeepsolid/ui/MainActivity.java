@@ -180,20 +180,33 @@ public class MainActivity extends AppCompatActivity {
         // this dynamically extends to take the bytes you read
         ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
 
-        // this is storage overwritten on each iteration with bytes
-        int bufferSize = 10240;
-        byte[] buffer = new byte[bufferSize];
+        int line = 0;
+        byte[] buffer = getBufferArrayDefault();
         // we need to know how may bytes were read to write them to the byteBuffer
         int len;
         while ((len = inputStream.read(buffer)) != -1) {
             Log.i(TAG, "readBytes _ len =" + len);
             byteBuffer.write(buffer, 0, len);
-            if (len > 8) break;
+            if (line == 1) buffer = getBufferArrayBody(buffer);
+            if (line == 2) break;
+            line++;
         }
-        //I/Choreographer: Skipped 41 frames!  The application may be doing too much work on its main thread.
         Log.i(TAG, "readBytes _ end ");
-        // and then we can return your byte array.
         return byteBuffer.toByteArray();
+    }
+
+    private byte[] getBufferArrayBody(byte[] bytes) {
+        byte[] arraySizeBody = Arrays.copyOfRange(bytes, 0, 3);
+        ByteBuffer buffer = ByteBuffer.wrap(arraySizeBody);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        int bufferSize = buffer.getShort();
+        Log.i(TAG, "bufferSize Body = " + bufferSize);
+        return new byte[bufferSize];
+    }
+
+    private byte[] getBufferArrayDefault() {
+        final int bufferSizeDefault = 8;
+        return new byte[bufferSizeDefault];
     }
 
     private Message.Request createObject(String sessionID) {
@@ -247,9 +260,8 @@ public class MainActivity extends AppCompatActivity {
         position = position + sizeHeaderPast2;
         System.arraycopy(arrayProto, 0, newArray, position, sizeProto);
 
-        Log.i(TAG, "arrayRequest.length =  " + newArray.length);//67
+        Log.i(TAG, "arrayRequest.length =  " + newArray.length);
         Log.i(TAG, "arrayRequest =  " + Arrays.toString(newArray));
-        //[0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0, 8, 64, -126, 4, 38, 10, 36, 57, 100, 99, 52, 50, 54, 99, 97, 45, 50, 48, 97, 57, 45, 52, 52, 50, 100, 45, 56, 99, 57, 101, 45, 48, 50, 56, 102, 52, 54, 54, 50, 49, 53, 53, 99, -128, -128, 2, 1, -120, -128, 2, 1]
         return newArray;
     }
 
@@ -285,8 +297,8 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "   Need client authentication = "
                 + s.getNeedClientAuth());
         SSLSession ss = s.getSession();
-        Log.i(TAG, "   Cipher suite = " + ss.getCipherSuite());//TLS_DHE_RSA_WITH_AES_128_CBC_SHA
-        Log.i(TAG, "   Protocol = " + ss.getProtocol());//TLSv1
+        Log.i(TAG, "   Cipher suite = " + ss.getCipherSuite());
+        Log.i(TAG, "   Protocol = " + ss.getProtocol());
     }
 
     @Override
