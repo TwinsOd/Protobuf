@@ -15,7 +15,6 @@ import com.example.twins.testkeepsolid.adapter.ChecklistAdapter;
 import com.example.twins.testkeepsolid.data.model.TaskModel;
 import com.google.gson.Gson;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,9 +51,10 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     private ChecklistAdapter mChecklistAdapter;
     private List<TaskModel> mTaskList = new ArrayList<>();
     private byte[] arrayRequest;
-    private OutputStream outputStream;
     private ProgressBar progressBar;
     private Executor executorRequest;
+    private Executor executorResponse;
+    private Message.Request requestProtobufModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,17 +67,40 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
             sessionID = intent.getStringExtra(KEY_SESSION_ID);
             Log.i(TAG, "sessionID = " + sessionID);
         }
-
         if (sessionID != null) {
-            try {
-                initRecycleView();
-                getData(sessionID);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            initRecycleView();
+            requestProtobufModel = createObject(sessionID);
+            arrayRequest = createArrayRequest(requestProtobufModel, 0);
         }
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         executorRequest = Executors.newSingleThreadExecutor();
+        executorResponse = Executors.newSingleThreadExecutor();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            createSocket();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Executor executorClose = Executors.newSingleThreadExecutor();
+        executorClose.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void initRecycleView() {
@@ -87,18 +110,16 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         recyclerView.setAdapter(mChecklistAdapter);
     }
 
-    private void getData(final String sessionID) throws IOException {
+    private void createSocket() throws IOException {
         final String ITEM_URL = "rpc.v1.keepsolid.com";
 //        final String ITEM_URL = "198.7.62.140";
         final int PORT = 443;
 //        final int PORT = 6668;
 
-        Executor executorResponse = Executors.newSingleThreadExecutor();
         executorResponse.execute(new Runnable() {
             @Override
             public void run() {
-                final Message.Request request = createObject(sessionID);
-                arrayRequest = createArrayRequest(request, 0);
+
                 try {
                     Log.i(TAG, "start ");
 
@@ -129,31 +150,23 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                     printServerCertificate(socket);
                     printSocketInfo(socket);
 
-                    outputStream = socket.getOutputStream();
+                    OutputStream outputStream = socket.getOutputStream();
                     InputStream inputStream = socket.getInputStream();
 
                     outputStream.write(arrayRequest);
                     Log.i(TAG, "outputStream.write ");
 
-                    ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                     int line = 0;
                     byte[] buffer = getBufferArrayDefault();
-                    // we need to know how may bytes were read to write them to the byteBuffer
-                    int len;
-                    while ((len = inputStream.read(buffer)) != -1) {
+                    while (inputStream.read(buffer) != -1) {
                         line++;
-                        Log.i(TAG, "readBytes _ len =" + len);
-                        byteBuffer.write(buffer, 0, len);
                         if (line == 1) {
-                            arrayRequest = createArrayRequest(request, buffer);
-                        }
-                        if (line == 2) {
+                            arrayRequest = createArrayRequest(requestProtobufModel, buffer);
+                        } else if (line == 2) {
                             buffer = getBufferArrayBody(buffer);
-                        }
-                        if (line == 3) {
+                        } else if (line == 3) {
                             Message.Response response = Message.Response.parseFrom(buffer);
                             showResponse(response);
-                            byteBuffer.flush();
                             buffer = getBufferArrayDefault();
                             line = 0;
                         }
@@ -183,7 +196,8 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mChecklistAdapter.notifyDataSetChanged();
+                    if (mChecklistAdapter != null)
+                        mChecklistAdapter.notifyDataSetChanged();
                     progressBar.setVisibility(View.GONE);
                 }
             });
@@ -297,25 +311,14 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        Executor executorClose = Executors.newSingleThreadExecutor();
-        executorClose.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    @Override
     public void setRequest() {
+        Log.i(TAG, "setRequest ");
         progressBar.setVisibility(View.VISIBLE);
-        executorRequest.execute(new SendRequestRunnable(outputStream, arrayRequest));
+        try {
+            executorRequest.execute(new SendRequestRunnable(socket.getOutputStream(), arrayRequest));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static class SendRequestRunnable implements Runnable {
@@ -327,10 +330,10 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
             this.arrayRequest = arrayRequest;
         }
 
-
         @Override
         public void run() {
             try {
+                Log.i("SendRequestRunnable", " outputStream.write");
                 outputStream.write(arrayRequest);
             } catch (IOException e) {
                 e.printStackTrace();
