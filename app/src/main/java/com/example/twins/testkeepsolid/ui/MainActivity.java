@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     private Executor executorRequest;
     private Executor executorResponse;
     private Message.Request requestProtobufModel;
+    private boolean isRunSocket = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +66,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         String sessionID = null;
         if (intent != null) {
             sessionID = intent.getStringExtra(KEY_SESSION_ID);
-            Log.i(TAG, "sessionID = " + sessionID);
         }
         if (sessionID != null) {
             initRecycleView();
@@ -81,6 +81,8 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     protected void onResume() {
         super.onResume();
         try {
+            arrayRequest = createArrayRequest(requestProtobufModel, 0);
+            mTaskList.clear();
             createSocket();
         } catch (IOException e) {
             e.printStackTrace();
@@ -146,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
 
                     SocketFactory socketFactory = sc.getSocketFactory();
                     socket = (SSLSocket) socketFactory.createSocket(ITEM_URL, PORT);
+                    isRunSocket = true;
 
                     printServerCertificate(socket);
                     printSocketInfo(socket);
@@ -154,7 +157,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                     InputStream inputStream = socket.getInputStream();
 
                     outputStream.write(arrayRequest);
-                    Log.i(TAG, "outputStream.write ");
 
                     int line = 0;
                     byte[] buffer = getBufferArrayDefault();
@@ -171,12 +173,18 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                             line = 0;
                         }
                     }
-                    Log.i(TAG, "readBytes _ end ");
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Log.i(TAG, "IOException = " + e.getMessage());
                 } catch (NoSuchAlgorithmException | KeyManagementException e) {
                     e.printStackTrace();
+                } finally {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    isRunSocket = false;
+                    arrayRequest = createArrayRequest(requestProtobufModel, 0);
                 }
             }
         });
@@ -187,7 +195,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         if (countInfo >= 1) {
             for (MessageCommon.WorkGroupInfo model : response.getWorkgroupsList().getWorkgroupInfoListList()) {
                 String json = model.getWorkgroupMetadata();
-                Log.i(TAG, "getWorkgroupMetadata() = " + json);
                 Gson gson = new Gson();
                 TaskModel taskModel = gson.fromJson(json, TaskModel.class);
                 taskModel.setType(model.getWorkgroupType());
@@ -209,7 +216,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         ByteBuffer buffer = ByteBuffer.wrap(arraySizeBody);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         int bufferSize = buffer.getShort();
-        Log.i(TAG, "bufferSize Body = " + bufferSize);
         return new byte[bufferSize];
     }
 
@@ -235,7 +241,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     private byte[] createArrayRequest(Message.Request request, byte[] arraySequenceNumber) {
         byte[] arrayProto = request.toByteArray();
         int sizeProto = arrayProto.length;
-        Log.i(TAG, "arrayProto.length = " + sizeProto);
 
         ByteBuffer buffer1 = ByteBuffer.allocate(4);
         buffer1.order(ByteOrder.LITTLE_ENDIAN);
@@ -269,8 +274,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         position = position + sizeHeaderPast2;
         System.arraycopy(arrayProto, 0, newArray, position, sizeProto);
 
-        Log.i(TAG, "arrayRequest.length =  " + newArray.length);
-        Log.i(TAG, "arrayRequest =  " + Arrays.toString(newArray));
         return newArray;
     }
 
@@ -315,7 +318,10 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         Log.i(TAG, "setRequest ");
         progressBar.setVisibility(View.VISIBLE);
         try {
-            executorRequest.execute(new SendRequestRunnable(socket.getOutputStream(), arrayRequest));
+            if (!isRunSocket)
+                createSocket();
+            else
+                executorRequest.execute(new SendRequestRunnable(socket.getOutputStream(), arrayRequest));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -333,7 +339,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
         @Override
         public void run() {
             try {
-                Log.i("SendRequestRunnable", " outputStream.write");
                 outputStream.write(arrayRequest);
             } catch (IOException e) {
                 e.printStackTrace();
