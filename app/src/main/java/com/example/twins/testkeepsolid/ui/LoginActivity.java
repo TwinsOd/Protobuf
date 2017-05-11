@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.twins.testkeepsolid.BuildConfig;
@@ -47,6 +48,7 @@ import static com.example.twins.testkeepsolid.Constant.TIME_ZONE;
 
 public class LoginActivity extends AppCompatActivity {
     private AutoCompleteTextView mLoginView, mPasswordView;
+    private Button btnNext;
     private String TAG = "LoginActivity";
 
     @Override
@@ -57,7 +59,8 @@ public class LoginActivity extends AppCompatActivity {
         mLoginView = (AutoCompleteTextView) findViewById(R.id.login_text_view);
         mPasswordView = (AutoCompleteTextView) findViewById(R.id.password_text_view);
 
-        findViewById(R.id.next_button).setOnClickListener(new View.OnClickListener() {
+        btnNext = (Button) findViewById(R.id.next_button);
+        btnNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mLoginView.setError(null);
@@ -82,6 +85,8 @@ public class LoginActivity extends AppCompatActivity {
                 if (cancel) {
                     focusView.requestFocus();
                 } else {
+                    btnNext.setClickable(false);
+                    findViewById(R.id.login_progress_bar).setVisibility(View.VISIBLE);
                     hideKeyboard();
                     mLoginView.setError(null);
                     mPasswordView.setError(null);
@@ -92,8 +97,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void startMainActivity(String sessionId) {
-        Log.d(TAG, "startMainActivity _ getResponse = " + sessionId);
-
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         intent.putExtra(KEY_SESSION_ID, sessionId);
@@ -118,7 +121,7 @@ public class LoginActivity extends AppCompatActivity {
                     startMainActivity(response.body().getSession());
                 } else {
                     Toast.makeText(LoginActivity.this, "Error connect", Toast.LENGTH_SHORT).show();
-
+                    findViewById(R.id.login_progress_bar).setVisibility(View.GONE);
                 }
             }
 
@@ -131,10 +134,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private Map<String, String> getFields(String login, String password) {
-        //for test
-        login = "kscheck006@mailinator.com";
-        password = "123456";
-
         Map<String, String> map = new HashMap<>();
         try {
             map.put(ACTION, base64Encoded(LOGIN_VALUE));

@@ -92,8 +92,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     @Override
     protected void onPause() {
         super.onPause();
-        Executor executorClose = Executors.newSingleThreadExecutor();
-        executorClose.execute(new Runnable() {
+        executorRequest.execute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -123,8 +122,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
             public void run() {
 
                 try {
-                    Log.i(TAG, "start ");
-
                     TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
                         @Override
                         public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
@@ -173,9 +170,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
                             line = 0;
                         }
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                } catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {
                     e.printStackTrace();
                 } finally {
                     try {
@@ -315,7 +310,6 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
 
     @Override
     public void setRequest() {
-        Log.i(TAG, "setRequest ");
         progressBar.setVisibility(View.VISIBLE);
         try {
             if (!isRunSocket)
