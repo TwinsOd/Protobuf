@@ -2,7 +2,7 @@
 
 Protocol buffers, SLL Socket
 
-1.Authorization via POST request.
+ 1.Authorization via POST request.
 
 2. Get Items list from Checklist account
 
