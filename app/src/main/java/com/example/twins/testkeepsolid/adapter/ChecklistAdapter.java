@@ -41,18 +41,17 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 return new ValueTaskHolder(view);
             case VALUE_TASK_LIST:
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_task_list, viewGroup, false);
-                break;
+                return new ValueTaskListHolder(view);
             default:
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_default, viewGroup, false);
+                return new ValueTaskDefaultHolder(view);
         }
-
-        return new ImageViewHolder(view, i);
     }
 
     @SuppressLint("DefaultLocale")
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, final int position) {
-        Consumer<TaskModel> holder = (Consumer<TaskModel>) viewHolder;
+        TaskModelConsumer holder = (TaskModelConsumer) viewHolder;
         TaskModel model = taskList.get(position);
         holder.accept(model);
 
