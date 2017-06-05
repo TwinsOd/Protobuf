@@ -2,6 +2,7 @@ package com.example.twins.testkeepsolid.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     private String TAG = "MainActivity";
     private SSLSocket socket;
     private ChecklistAdapter mChecklistAdapter;
+    @NonNull
     private List<TaskModel> mTaskList = new ArrayList<>();
     private byte[] arrayRequest;
     private ProgressBar progressBar;
