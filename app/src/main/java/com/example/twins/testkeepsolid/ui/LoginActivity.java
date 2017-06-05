@@ -134,10 +134,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private Map<String, String> getFields(String login, String password) {
-        //for test
-        login = "kscheck006@mailinator.com";
-        password = "123456";
-        
+
         Map<String, String> map = new HashMap<>();
         try {
             map.put(ACTION, base64Encoded(LOGIN_VALUE));
