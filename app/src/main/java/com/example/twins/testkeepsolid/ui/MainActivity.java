@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements LoadingData {
     }
 
     private void initRecycleView() {
-        mChecklistAdapter = new ChecklistAdapter(this, mTaskList, this);
+        mChecklistAdapter = new ChecklistAdapter(mTaskList, this);
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.checklist_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(mChecklistAdapter);

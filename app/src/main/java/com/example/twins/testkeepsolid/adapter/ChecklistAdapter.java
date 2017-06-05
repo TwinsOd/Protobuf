@@ -1,7 +1,6 @@
 package com.example.twins.testkeepsolid.adapter;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -20,13 +19,11 @@ public class ChecklistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     public static final int VALUE_TASK_LIST = 1002;
     @NonNull
     private final List<TaskModel> taskList;
-    private Context mContext;
     private LoadingData interfaceLoadingData;
 
-    public ChecklistAdapter(Context context, @NonNull List<TaskModel> taskList, LoadingData interfaceLoadingData) {
+    public ChecklistAdapter(@NonNull List<TaskModel> taskList, LoadingData interfaceLoadingData) {
         this.taskList = taskList;
         this.interfaceLoadingData = interfaceLoadingData;
-        mContext = context;
     }
 
     @Override
